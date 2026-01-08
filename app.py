@@ -1,19 +1,17 @@
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
+import numpy as np
+import cv2
 import tempfile
-import os
 
-# Page settings
-st.set_page_config(
-    page_title="YOLOv11 Image Detection",
-    layout="wide"
-)
+# Page config
+st.set_page_config(page_title="YOLOv11 Image Detection", layout="centered")
 
 st.title("🧠 YOLOv11 Object Detection")
-st.write("Upload an image and detect objects using YOLOv11")
+st.write("Upload an image to detect objects using YOLOv11n")
 
-# Load model once
+# Load model
 @st.cache_resource
 def load_model():
     return YOLO("yolo11n.pt")
@@ -21,44 +19,47 @@ def load_model():
 model = load_model()
 
 # Upload image
-uploaded_image = st.file_uploader(
-    "Upload Image",
+uploaded_file = st.file_uploader(
+    "Upload an Image",
     type=["jpg", "jpeg", "png", "webp"]
 )
 
-if uploaded_image:
-    image = Image.open(uploaded_image)
+if uploaded_file is not None:
+    # Read image
+    image = Image.open(uploaded_file)
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    col1, col2 = st.columns(2)
+    if st.button("🔍 Detect Objects"):
+        with st.spinner("Detecting objects..."):
+            # Convert PIL to OpenCV format
+            img_array = np.array(image)
+            img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
-    # Show original image
-    with col1:
-        st.subheader("📷 Original Image")
-        st.image(image, use_column_width=True)
+            # Save temp image
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+                cv2.imwrite(tmp.name, img_bgr)
+                temp_path = tmp.name
 
-    # Save image temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-        image.save(tmp.name)
-        image_path = tmp.name
+            # Run YOLO
+            results = model(temp_path)
 
-    # Run YOLO detection
-    results = model(image_path)
+            # Get annotated image
+            annotated_img = results[0].plot()
+            annotated_img = cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB)
 
-    # Plot detection image
-    detected_image = results[0].plot()
+            # Show result
+            st.image(
+                annotated_img,
+                caption="Detection Result",
+                use_column_width=True
+            )
 
-    # Show detected image
-    with col2:
-        st.subheader("✅ Detected Image")
-        st.image(detected_image, use_column_width=True)
+            # Show detection details
+            st.subheader("📊 Detection Details")
+            for box in results[0].boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                label = model.names[cls_id]
+                st.write(f"**{label}** — Confidence: `{conf:.2f}`")
 
-    # Show detected objects
-    st.subheader("📊 Detection Details")
-    for box in results[0].boxes:
-        class_id = int(box.cls[0])
-        confidence = float(box.conf[0])
-        class_name = model.names[class_id]
 
-        st.write(f"**{class_name}** → Confidence: `{confidence:.2f}`")
-
-    os.remove(image_path)
