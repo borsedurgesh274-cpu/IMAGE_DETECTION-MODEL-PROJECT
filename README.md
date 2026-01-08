@@ -68,6 +68,18 @@ Performance optimization
 
 Detection analytics dashboard
 
+# Output
+<img width="1322" height="384" alt="Screenshot 2026-01-08 141818" src="https://github.com/user-attachments/assets/b1fcdc14-ad5c-446d-952a-050f24efd8a3" />
+<img width="834" height="575" alt="Screenshot 2026-01-08 141923" src="https://github.com/user-attachments/assets/0e2a1255-bfcd-43ea-9f88-6b21db55e436" />
+<img width="910" height="583" alt="Screenshot 2026-01-08 141954" src="https://github.com/user-attachments/assets/99f0a88a-9505-40bb-930d-d3372b77660e" />
+
+🚀 Live Project Demo
+
+🔗 Streamlit App Link:
+👉 https://eexgkzehpeij9g35qhroxs.streamlit.app/
+
+
+
 🙌 Author
 
 Durgesh Borse
