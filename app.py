@@ -5,61 +5,41 @@ import numpy as np
 import cv2
 import tempfile
 
-# Page config
-st.set_page_config(page_title="YOLOv11 Image Detection", layout="centered")
+st.set_page_config(page_title="YOLOv11 Detection", layout="centered")
 
-st.title("🧠 YOLOv11 Object Detection")
-st.write("Upload an image to detect objects using YOLOv11n")
+st.title("🧠 YOLOv11 Image Object Detection")
 
-# Load model
 @st.cache_resource
 def load_model():
     return YOLO("yolo11n.pt")
 
 model = load_model()
 
-# Upload image
 uploaded_file = st.file_uploader(
-    "Upload an Image",
+    "Upload an image",
     type=["jpg", "jpeg", "png", "webp"]
 )
 
-if uploaded_file is not None:
-    # Read image
-    image = Image.open(uploaded_file)
+if uploaded_file:
+    image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    if st.button("🔍 Detect Objects"):
-        with st.spinner("Detecting objects..."):
-            # Convert PIL to OpenCV format
-            img_array = np.array(image)
-            img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+    if st.button("Detect Objects"):
+        with st.spinner("Running YOLO detection..."):
+            img_np = np.array(image)
+            img_bgr = cv2.cvtColor(img_np, cv2.COLOR_RGB2BGR)
 
-            # Save temp image
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
                 cv2.imwrite(tmp.name, img_bgr)
-                temp_path = tmp.name
+                results = model(tmp.name)
 
-            # Run YOLO
-            results = model(temp_path)
+            annotated = results[0].plot()
+            annotated = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
 
-            # Get annotated image
-            annotated_img = results[0].plot()
-            annotated_img = cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB)
+            st.image(annotated, caption="Detection Result", use_column_width=True)
 
-            # Show result
-            st.image(
-                annotated_img,
-                caption="Detection Result",
-                use_column_width=True
-            )
-
-            # Show detection details
-            st.subheader("📊 Detection Details")
+            st.subheader("📊 Detected Objects")
             for box in results[0].boxes:
-                cls_id = int(box.cls[0])
+                cls = int(box.cls[0])
                 conf = float(box.conf[0])
-                label = model.names[cls_id]
-                st.write(f"**{label}** — Confidence: `{conf:.2f}`")
-
-
+                st.write(f"**{model.names[cls]}** — {conf:.2f}")
